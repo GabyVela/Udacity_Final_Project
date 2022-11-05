@@ -12,12 +12,15 @@ public:
   {
     subscription_ = this->create_subscription<std_msgs::msg::String>(
       "test_pub_topic", 10, std::bind(&MinimalSubscriber::topic_callback, this, std::placeholders::_1));
+
+    
   }
 
 private:
   void topic_callback(const std_msgs::msg::String::SharedPtr msg) const
   {
     RCLCPP_INFO(this->get_logger(), "I heard: '%s'", msg->data.c_str());
+    // msg->pose.pose.position.x
   }
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
 };
