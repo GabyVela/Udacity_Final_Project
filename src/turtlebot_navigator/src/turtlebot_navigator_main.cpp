@@ -20,7 +20,12 @@ private:
   void topic_callback(const std_msgs::msg::String::SharedPtr msg) const
   {
     RCLCPP_INFO(this->get_logger(), "I heard: '%s'", msg->data.c_str());
-    // msg->pose.pose.position.x
+   // msg->pose.pose.position.x
+    //msg->pose.pose.position.y
+   // msg->pose.pose.position.z //rotacion
+
+    
+
   }
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
 };

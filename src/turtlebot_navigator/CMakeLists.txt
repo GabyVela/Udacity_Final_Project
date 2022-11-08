@@ -20,6 +20,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -41,10 +42,18 @@ ament_target_dependencies(turtlebot_navigator rclcpp std_msgs nav_msgs)
 add_executable(talker src/publisher_test_function.cpp)
 ament_target_dependencies(talker rclcpp std_msgs)
 
+add_executable(kitchen src/Kitchen.cpp)
+ament_target_dependencies(kitchen rclcpp std_msgs ament_index_cpp)
+
+install(DIRECTORY
+Menu
+DESTINATION share/${PROJECT_NAME})
+
 
 
 install(TARGETS
     turtlebot_navigator
+    kitchen
     talker # THIS IS JUST FOR TESTING
     DESTINATION lib/${PROJECT_NAME}
 )
