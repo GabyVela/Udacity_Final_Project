@@ -5,6 +5,8 @@
 #include <fstream>
 #include <sstream>
 #include <ament_index_cpp/get_package_share_directory.hpp>
+#include <chrono>
+#include <mutex>
 
 
 class Dish {
@@ -38,20 +40,7 @@ class Menu {
         }
     }
 
-    Menu(){
-
-            dishes_list.push_back({ //como es que va a seleccionar el pedido
-            15,"Enchiladas"
-            /*20,"Sopa Azteca"
-            22,"Sopes"
-            25,"Flautas"
-            18,"Mole"
-            19,"Pozole"
-            23,"Chiles en Nogada"*/
-        });
-
-    }
-
+    Menu(){}
 
     Menu(std::string inputname){
         std::string line;
@@ -59,6 +48,8 @@ class Menu {
 
         std::string package_share_directory = ament_index_cpp::get_package_share_directory("turtlebot_navigator");
         std::cout<<package_share_directory<<std::endl;
+
+        
 
         std::ifstream file(package_share_directory+"/Menu/Mexicano.txt");
         if (file.is_open()){
@@ -91,21 +82,37 @@ class DishOrder{
 class Chef{
     public:
     Menu menu;
+    std::mutex& order_mutex;
+    
+    Chef(std::mutex& mutex):order_mutex(mutex){}
+
     void start_to_cook(DishOrder dish_order){
         
        // std::cout<<"Please enter the Dish you want to order"<<menu.getdish<<std::endl;
         //std::cin>>menu.dishes_list; //ordenes de pedido que recibe el chef... no me muestra en la consola la opcion de elegir el platillo
         int time = menu.getdish(dish_order.dish_name).prep_time;
-    	std::cout<<"start cooking: "<<dish_order.dish_name<<" "<<"Estimated Time to cook:  "<<time;
+    	std::cout<<"start cooking: "<<dish_order.dish_name<<" "<<"Estimated Time to cook: "<<time<<" ";
 
     }    
+
+    void start_cycle(){
+
+        std::cout<<"Preparing Food"<<std::endl;
+        order_mutex.lock();
+        std::cout<<" Food Prepared!"<<std::endl;
+        order_mutex.unlock();
+
+    }
 };
 
 
 
 int main(){
     std::cout<<"funciona"<<std::endl;
-    Chef chef;
+    std::mutex recibe_order_mutex;
+    Chef chef(recibe_order_mutex);
+    recibe_order_mutex.lock();
+
     std::string input_name;
 
     std::cout<<"Menu Name: "<<std::endl;
@@ -120,5 +127,15 @@ int main(){
     std::cin>>order.dish_name;
     chef.start_to_cook(order);
 
+    auto cook_thread = [&chef]() {
+        chef.start_cycle();
+        
+    };
+    std::thread thread_object(cook_thread);
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    recibe_order_mutex.unlock();
+    thread_object.join();
+    std::cout<<"Done"<<std::endl;
     return 0;
 }
+
