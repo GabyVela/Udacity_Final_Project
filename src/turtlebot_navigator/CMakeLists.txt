@@ -34,11 +34,12 @@ if(BUILD_TESTING)
 endif()
 
 ament_package()
-
+include_directories(include)
 add_executable(turtlebot_navigator src/turtlebot_navigator_main.cpp)
 ament_target_dependencies(turtlebot_navigator rclcpp std_msgs nav_msgs)
 
 # THIS EXECUTABLE IS ONLY TO TEST THE MINIMAL SUBSCRIBER!
+
 add_executable(talker src/publisher_test_function.cpp)
 ament_target_dependencies(talker rclcpp std_msgs)
 
