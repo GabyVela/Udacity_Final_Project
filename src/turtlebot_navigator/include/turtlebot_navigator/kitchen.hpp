@@ -8,6 +8,7 @@
 #include <sstream>
 #include <chrono>
 #include <mutex>
+#include <random>
 #include "turtlebot_navigator/jobqueue.hpp"
 #include "turtlebot_navigator/jobagent.hpp"
 
@@ -85,6 +86,7 @@ private:
     Menu& _menu;
     bool _cooking;
     JobQueue<DishOrder>& _preparedOrders;
+    std::thread _chef_thread, _cooking_thread;
 
     void cook_cycle(){
         while(_cooking || _preparing_orders.size() > 0 ){
@@ -115,8 +117,17 @@ private:
                  
         }
     }
+
+    void chef_cycle(){
+        while(_cooking){        
+            checkForNewJobs();
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+        }
+    }
 protected:
     void processJob(std::unique_ptr<DishOrder> order) {
+        int sleepSeconds = 1 + random() % 2;
+        std::this_thread::sleep_for(std::chrono::seconds(sleepSeconds));
         _preparing_orders.push_back(_menu.getdish(order->dish_name));
     }
 public:
@@ -126,77 +137,22 @@ public:
 
     void startCooking() {
         _cooking = true;
-        cook_cycle();
-    }
-};
-
-class Chef{
-    public:
-
-    JobQueue<DishOrder>recibe_order;
-    std::vector<Dish>preparing_orders;
-    bool cooking;
-
-    Menu menu;
-    std::mutex& order_mutex;
-    
-    Chef(std::mutex& mutex):order_mutex(mutex){}
-   
-    private:
-
-    Dish start_to_cook(std::unique_ptr<DishOrder> dish_order){
         
-       // std::cout<<"Please enter the Dish you want to order"<<menu.getdish<<std::endl;
-        //std::cin>>menu.dishes_list; //ordenes de pedido que recibe el chef... no me muestra en la consola la opcion de elegir el platillo
-        int time = menu.getdish(dish_order->dish_name).prep_time;
-    	std::cout<<"start cooking: "<<dish_order->dish_name<<" "<<"Estimated Time to cook: "<<time<<" ";
-        auto dish = menu.getdish(dish_order->dish_name);
-
-        return dish;
-    }    
-
-    public:
-
-    void start_cycle(){
-
-        while(cooking){        
-            order_mutex.lock();
-
-            while (recibe_order.hasJobs()) {
-                std::unique_ptr<DishOrder> order = recibe_order.takeJob();
-                preparing_orders.push_back(start_to_cook(std::move(order)));
-            }
-
-            // for(size_t i=0; i < recibe_order.size(); i++){
-                
-            //     preparing_orders.push_back(start_to_cook(recibe_order[i]));
-
-            // }
-            // recibe_order.clear();
-            order_mutex.unlock();
-        }
+        _chef_thread = std::thread([this](){
+            chef_cycle();
+        });
+        _cooking_thread = std::thread([this](){
+            cook_cycle();
+        });
     }
 
-    void cook_cycle(){
+    void stopCooking() {
+        _cooking = false;
+    }
 
-
-        while(cooking || preparing_orders.size()> 0 ){
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            for(int i=0; i < preparing_orders.size(); i++){
-                preparing_orders[i].prep_time-=1;
-                
-            }
-            std::vector<Dish>::iterator it = preparing_orders.begin();
-            while(it != preparing_orders.end()) {
-
-                if((*it).prep_time == 1) {
-                    std::cout<<"Done Preparing "<<(*it).dish_name<<std::endl;
-                    it= preparing_orders.erase(it);
-                }
-                else ++it;
-            }
-                 
-        }
+    void waitToFinish() {
+        _chef_thread.join();
+        _cooking_thread.join();
     }
 };
 

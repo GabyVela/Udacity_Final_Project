@@ -14,7 +14,6 @@
 
 int main(){
     std::mutex recibe_order_mutex;
-    Chef chef(recibe_order_mutex);
     
     recibe_order_mutex.lock();
 
@@ -25,16 +24,9 @@ int main(){
     // std::cin>>input_name;
     input_name = "Mexicano";
     Menu menu (input_name);
-    chef.menu = menu;
-    chef.cooking = true; 
-    std::thread chef_thread([&chef](){chef.start_cycle();});
-
     WaiterAgent waiterAgent;
     ChefAgent chefAgent(menu, waiterAgent.getJobs());
-
-    std::thread cooking_thread([&chefAgent](){
-      chefAgent.startCooking();
-    });
+    chefAgent.startCooking();
 
     int option =0;
     int running= 1;
@@ -66,8 +58,7 @@ int main(){
          if(option == 1){
             std::cout<<"Final Order is: "<<std::endl;
             
-            auto orders = chef.recibe_order.listJobs();
-
+            auto orders = chefAgent.getJobs().listJobs();
             if (orders.size() > 0) {
                 for(int i=0 ; i< orders.size(); i++){
                     std::cout << orders[i]->dish_name<<" / " <<menu.getdish(orders[i]->dish_name).prep_time <<std::endl;
@@ -87,9 +78,9 @@ int main(){
             std::cout<<"Adding another Dish "<<std::endl;
             std::unique_ptr<DishOrder> order = std::make_unique<DishOrder>();
     
-            std::cin>>order->dish_name;            
-            chef.recibe_order.add(std::move(order));
-            // chef.recibe_order.push_back(order);
+            std::cin>>order->dish_name;     
+
+            chefAgent.getJobs().add(std::move(order));
             recibe_order_mutex.unlock();
 
             }
@@ -100,7 +91,7 @@ int main(){
           else if(option ==5){
             std::cout<<"Good Bye"<<std::endl;
             running = 0;
-            chef.cooking = false;
+            chefAgent.stopCooking();
             recibe_order_mutex.unlock();
             }
          else{
@@ -109,9 +100,7 @@ int main(){
 
     }
         
-    
-    chef_thread.join();
-    cooking_thread.join();
+   chefAgent.waitToFinish();
     std::cout<<"Done"<<std::endl;
     return 0;
 }

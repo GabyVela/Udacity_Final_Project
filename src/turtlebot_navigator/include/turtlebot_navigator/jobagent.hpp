@@ -20,7 +20,7 @@ protected:
         while (jobs.hasJobs()) {
             auto job = jobs.takeJob();
             
-            processJob(job.get());
+            processJob(std::move(job));
         }
     }
     virtual void processJob(std::unique_ptr<T> job) = 0;
