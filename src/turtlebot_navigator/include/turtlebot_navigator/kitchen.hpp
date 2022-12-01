@@ -14,6 +14,7 @@
 class DishOrder{
     public:
     std::string dish_name;
+    bool isOrderDone = false;
 };
 
 
@@ -24,20 +25,12 @@ class Dish {
     std::string dish_name;
 };
 
-class Mesero : public JobAgent<int> {
-public:
-    void processJob(int* job) {
-        std::cout << "Soy un mesero y estoy haciendo " << *job << std::endl;
+class WaiterAgent : public JobAgent<DishOrder> {
+protected:
+    void processJob(std::unique_ptr<DishOrder> job) {
     }
 };
 
-class Camarero : public JobAgent<int> {
-public:
-    void saluda() {}
-    void processJob(int* job) {
-        std::cout << "Soy un Camarero y proceso trabajo: " << *job << std::endl;
-    }
-};
 
 class Menu {
    public:
@@ -56,27 +49,11 @@ class Menu {
 
     Menu(){}
 
-
-    void createJobAgent(std::unique_ptr<JobAgent<int>>& newAgent) {
-        newAgent = std::move(std::unique_ptr<JobAgent<int>>(new Camarero()));
-    }
-
     Menu(std::string inputname){
         std::string line;
         std::string token;
         std::string dishName;
         int prepTime;
-
-        int* a = new int[1];
-        *a = 3;
-        int* b = new int[1];
-        *b = 1;
-
-        std::unique_ptr<JobAgent<int>> aAgent;
-        createJobAgent(aAgent);
-        aAgent->getJobs().add(std::unique_ptr<int>(a));
-        aAgent->getJobs().add(std::unique_ptr<int>(b));
-        aAgent->checkForNewJobs();
 
         std::string package_share_directory = ament_index_cpp::get_package_share_directory("turtlebot_navigator");
         std::cout<<package_share_directory<<std::endl;
@@ -99,6 +76,57 @@ class Menu {
                 dishes_list.push_back({prepTime,dishName});
             }
         }
+    }
+};
+
+class ChefAgent : public JobAgent<DishOrder> {
+private:
+    std::vector<Dish> _preparing_orders;
+    Menu& _menu;
+    bool _cooking;
+    JobQueue<DishOrder>& _preparedOrders;
+
+    void cook_cycle(){
+        while(_cooking || _preparing_orders.size() > 0 ){
+
+            // Each preparing dish has remaining time to cook, we will decrease 1 unit from the remaining time
+            // each second
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            for(int i=0; i < _preparing_orders.size(); i++){
+                _preparing_orders[i].prep_time-=1;
+            }
+
+            // Check if a preparing dish is done with cooking (remaining time to cook is 1)
+            std::vector<Dish>::iterator it = _preparing_orders.begin();
+            while(it != _preparing_orders.end()) {
+                if((*it).prep_time == 1) {
+                    //
+                    std::cout<<"Done Preparing "<<(*it).dish_name<<std::endl;
+
+                    auto preparedOrder = std::make_unique<DishOrder>();
+                    preparedOrder->dish_name = (*it).dish_name;
+                    preparedOrder->isOrderDone = true;
+                    _preparedOrders.add(std::move(preparedOrder));
+                    //
+                    it= _preparing_orders.erase(it);
+                }
+                else ++it;
+            }
+                 
+        }
+    }
+protected:
+    void processJob(std::unique_ptr<DishOrder> order) {
+        _preparing_orders.push_back(_menu.getdish(order->dish_name));
+    }
+public:
+    ChefAgent(Menu& menu, JobQueue<DishOrder>& preparedOrders) : _menu(menu), _preparedOrders(preparedOrders) {
+        _cooking = false;
+    }
+
+    void startCooking() {
+        _cooking = true;
+        cook_cycle();
     }
 };
 

@@ -18,7 +18,6 @@ int main(){
     
     recibe_order_mutex.lock();
 
-    JobQueue<int> queue;
     
     std::string input_name;
 
@@ -29,8 +28,13 @@ int main(){
     chef.menu = menu;
     chef.cooking = true; 
     std::thread chef_thread([&chef](){chef.start_cycle();});
-    std::thread cooking_thread([&chef](){chef.cook_cycle();});
 
+    WaiterAgent waiterAgent;
+    ChefAgent chefAgent(menu, waiterAgent.getJobs());
+
+    std::thread cooking_thread([&chefAgent](){
+      chefAgent.startCooking();
+    });
 
     int option =0;
     int running= 1;
