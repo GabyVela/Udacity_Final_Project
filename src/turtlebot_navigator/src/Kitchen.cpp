@@ -9,14 +9,17 @@
 #include "turtlebot_navigator/kitchen.hpp"
 #include <ios>
 #include <limits>
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
 
 // for numeric_limits
 
-int main(){
-    std::mutex recibe_order_mutex;
-    
-    recibe_order_mutex.lock();
 
+int main(int argc, char **argv){
+   rclcpp::init(argc, argv);
+
+   OrderChecker orderChecker;
+   int nextOrderId = 1;
     
     std::string input_name;
 
@@ -24,13 +27,21 @@ int main(){
     // std::cin>>input_name;
     input_name = "Mexicano";
     Menu menu (input_name);
-    WaiterAgent waiterAgent;
+    WaiterAgent waiterAgent(orderChecker);
     ChefAgent chefAgent(menu, waiterAgent.getJobs());
     chefAgent.startCooking();
+    waiterAgent.startServing();
+
+   auto robot = std::make_shared<DemoRobot>(waiterAgent);
+   std::thread robot_thread([&](){
+      rclcpp::spin(robot);
+   });
 
     int option =0;
     int running= 1;
     std::string target_name;
+
+
 
 
     // ver las ordenes pendientes, eliminar algun platillo, ver el tiempo estimado de preparacion, pedir platillo
@@ -77,13 +88,26 @@ int main(){
 
             std::cout<<"Adding another Dish "<<std::endl;
             std::unique_ptr<DishOrder> order = std::make_unique<DishOrder>();
+            order->orderId = nextOrderId;
+            nextOrderId += 1;
     
             std::cin>>order->dish_name;     
 
-            chefAgent.getJobs().add(std::move(order));
-            recibe_order_mutex.unlock();
+            std::cout << "Do you want to wait until dish is delivered (Y/N)? ";
+            char waitFlag;
+            std::cin >> waitFlag;
 
+            int orderId=order->orderId;
+            std::string dishName = order->dish_name;
+            chefAgent.getJobs().add(std::move(order));
+
+            if (waitFlag == 'Y') {
+               std::future<void>& orderDeliveredFuture = orderChecker.createOrderBarrier(orderId);
+               orderDeliveredFuture.wait();
+               std::cout << "The dish (" << orderId << ") " << dishName << " was delivered!" << std::endl;
             }
+
+         }
          else if(option ==4){
             std::cout<<"Deleting Dish "<<std::endl;
 
@@ -92,7 +116,7 @@ int main(){
             std::cout<<"Good Bye"<<std::endl;
             running = 0;
             chefAgent.stopCooking();
-            recibe_order_mutex.unlock();
+            waiterAgent.stopServing();
             }
          else{
             std::cout<<"Option Not Found"<<std::endl;
@@ -100,8 +124,12 @@ int main(){
 
     }
         
+   rclcpp::shutdown();
    chefAgent.waitToFinish();
-    std::cout<<"Done"<<std::endl;
-    return 0;
+   waiterAgent.waitToFinish();
+   robot_thread.join();
+   std::cout<<"Done"<<std::endl;
+
+   return 0;
 }
 

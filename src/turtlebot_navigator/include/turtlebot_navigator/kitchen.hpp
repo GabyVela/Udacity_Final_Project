@@ -3,12 +3,16 @@
 
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 #include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <chrono>
+#include <future>
 #include <mutex>
 #include <random>
+#include "rclcpp/rclcpp.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 #include "turtlebot_navigator/jobqueue.hpp"
 #include "turtlebot_navigator/jobagent.hpp"
 
@@ -16,21 +20,125 @@ class DishOrder{
     public:
     std::string dish_name;
     bool isOrderDone = false;
+    int orderId;
 };
 
 
 class Dish {
     public:
     int prep_time; 
+    int orderId;
 
     std::string dish_name;
 };
 
-class WaiterAgent : public JobAgent<DishOrder> {
-protected:
-    void processJob(std::unique_ptr<DishOrder> job) {
+using Twist = geometry_msgs::msg::Twist;
+using namespace std::chrono_literals;
+
+class OrderChecker {
+private:
+    std::unordered_map<int, std::promise<void>> orderBarriers;
+    std::unordered_map<int, std::future<void>> orderFutures;
+public:
+    std::future<void>& createOrderBarrier(int orderId) {
+
+        std::promise<void> orderDeliveredBarrier;
+        std::future<void> orderDeliveredFuture = orderDeliveredBarrier.get_future();
+        orderBarriers[orderId] = std::move(orderDeliveredBarrier);
+        orderFutures[orderId] = std::move(orderDeliveredFuture);
+        return orderFutures[orderId];
+    }
+
+    bool hasOrderBarrier(int orderId) {
+        return orderBarriers.find(orderId) != orderBarriers.end();
+
+    }
+
+    std::promise<void>& getOrderBarrier(int orderId) {
+        return orderBarriers[orderId];
     }
 };
+
+
+class WaiterAgent : public JobAgent<DishOrder> {
+private:
+    bool _delivering = false;
+    std::thread _waiter_thread;
+    OrderChecker& _orderChecker;
+
+protected:
+    void processJob(std::unique_ptr<DishOrder> job) {
+        isProcessingJob = true;
+
+        if (_orderChecker.hasOrderBarrier(job->orderId)) {
+            _orderChecker.getOrderBarrier(job->orderId).set_value();
+        }
+    }
+   
+    void waiter_cycle(){
+        while(_delivering){        
+            checkForNewJobs();
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+        }
+
+    }
+public:
+
+    WaiterAgent(OrderChecker& orderChecker) : _orderChecker(orderChecker) {
+
+    }
+
+    bool isProcessingJob = false;
+
+    void startServing() {
+        _delivering = true;
+        
+        _waiter_thread = std::thread([this](){
+            waiter_cycle();
+        });
+       
+    }
+
+    void stopServing() {
+        _delivering = false;
+        }
+
+    void waitToFinish() {
+        _waiter_thread.join();
+        }
+};
+
+class DemoRobot : public rclcpp::Node {
+public:
+   DemoRobot(WaiterAgent& waiter) : Node("demo_robot"), _waiter(waiter) {
+      std::cout << "A robot!" << std::endl;
+
+      _publisher = create_publisher<Twist>("cmd_vel", 10);
+      _timer = create_wall_timer(1000ms, std::bind(&DemoRobot::timer_function, this));
+
+      name = "robert";
+
+      
+   }
+
+private:
+   rclcpp::Publisher<Twist>::SharedPtr _publisher;
+   rclcpp::TimerBase::SharedPtr _timer;
+   std::string name;
+   WaiterAgent& _waiter;
+
+   void timer_function() {
+      if (_waiter.isProcessingJob == true) {
+        _timer->cancel();
+        std::cout << name << " moves!" << std::endl;
+        Twist mov;
+        mov.angular.z = 1.2;
+        _publisher->publish(mov);
+      }
+   }
+
+};
+
 
 
 class Menu {
@@ -47,8 +155,6 @@ class Menu {
             return *dish_it;
         }
     }
-
-    Menu(){}
 
     Menu(std::string inputname){
         std::string line;
@@ -74,7 +180,7 @@ class Menu {
                 std::getline(linestream,token,',');
                 std::cout<<token<<std::endl;
                 dishName = token;
-                dishes_list.push_back({prepTime,dishName});
+                dishes_list.push_back({prepTime, -1, dishName});
             }
         }
     }
@@ -106,6 +212,7 @@ private:
                     std::cout<<"Done Preparing "<<(*it).dish_name<<std::endl;
 
                     auto preparedOrder = std::make_unique<DishOrder>();
+                    preparedOrder->orderId = (*it).orderId;
                     preparedOrder->dish_name = (*it).dish_name;
                     preparedOrder->isOrderDone = true;
                     _preparedOrders.add(std::move(preparedOrder));
@@ -128,7 +235,9 @@ protected:
     void processJob(std::unique_ptr<DishOrder> order) {
         int sleepSeconds = 1 + random() % 2;
         std::this_thread::sleep_for(std::chrono::seconds(sleepSeconds));
-        _preparing_orders.push_back(_menu.getdish(order->dish_name));
+        auto dish = _menu.getdish(order->dish_name);
+        dish.orderId = order->orderId;
+        _preparing_orders.push_back(dish);
     }
 public:
     ChefAgent(Menu& menu, JobQueue<DishOrder>& preparedOrders) : _menu(menu), _preparedOrders(preparedOrders) {

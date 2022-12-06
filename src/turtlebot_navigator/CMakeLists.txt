@@ -20,6 +20,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs)
 find_package(ament_index_cpp REQUIRED)
 
 if(BUILD_TESTING)
@@ -44,7 +45,7 @@ add_executable(talker src/publisher_test_function.cpp)
 ament_target_dependencies(talker rclcpp std_msgs)
 
 add_executable(kitchen src/Kitchen.cpp)
-ament_target_dependencies(kitchen rclcpp std_msgs ament_index_cpp)
+ament_target_dependencies(kitchen rclcpp std_msgs ament_index_cpp geometry_msgs)
 
 install(DIRECTORY
 Menu
