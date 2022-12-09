@@ -47,7 +47,7 @@ int main(int argc, char **argv){
 
     // ver las ordenes pendientes, eliminar algun platillo, ver el tiempo estimado de preparacion, pedir platillo
     while(running){
-         std::cout<<"What action do you want to do"<<std::endl;
+         std::cout<<"SELECT A NUMBER OF THE ACTION YOU WANT TO DO"<<std::endl;
          std::cout<<"1) Pending Orders"<<std::endl;
          std::cout<<"2) Estimated Preparation Time"<<std::endl;
          std::cout<<"3) Add a dish"<<std::endl;

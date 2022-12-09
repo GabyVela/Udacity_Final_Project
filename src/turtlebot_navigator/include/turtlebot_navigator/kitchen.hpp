@@ -115,8 +115,9 @@ public:
 
       _publisher = create_publisher<Twist>("cmd_vel", 10);
       _timer = create_wall_timer(1000ms, std::bind(&DemoRobot::timer_function, this));
-
+      _timerCoolDown = create_wall_timer(2000ms, std::bind(&DemoRobot::timerCoolDown_function, this));
       name = "Waiter";
+      isCoolDown = true;
 
       
    }
@@ -124,16 +125,28 @@ public:
 private:
    rclcpp::Publisher<Twist>::SharedPtr _publisher;
    rclcpp::TimerBase::SharedPtr _timer;
+   rclcpp::TimerBase::SharedPtr _timerCoolDown;
+   bool isCoolDown; 
+
    std::string name;
    WaiterAgent& _waiter;
 
    void timer_function() {
-      if (_waiter.isProcessingJob == true) {
-        _timer->cancel();
+      if (isCoolDown && _waiter.isProcessingJob == true) {
         std::cout << name << " moves!" << std::endl;
         Twist mov;
         mov.angular.z = 1.2;
         _publisher->publish(mov);
+        isCoolDown = false;
+        _waiter.isProcessingJob = false;
+      }
+   }
+   void timerCoolDown_function() {
+      if ( isCoolDown == false) {
+        Twist mov;
+        mov.angular.z = 0;
+        _publisher->publish(mov);
+        isCoolDown = true;
       }
    }
 
