@@ -23,9 +23,10 @@ int main(int argc, char **argv){
     
     std::string input_name;
 
-    std::cout<<"Menu Name: "<<std::endl;
-    // std::cin>>input_name;
-    input_name = "Mexicano";
+    std::cout<<"Menu Name: (Mexican, American, Japanesse)"<<std::endl;
+   
+    std::cin>>input_name;
+    //input_name = "Mexicano";
     Menu menu (input_name);
     WaiterAgent waiterAgent(orderChecker);
     ChefAgent chefAgent(menu, waiterAgent.getJobs());
@@ -46,7 +47,7 @@ int main(int argc, char **argv){
 
     // ver las ordenes pendientes, eliminar algun platillo, ver el tiempo estimado de preparacion, pedir platillo
     while(running){
-         std::cout<<"MENU MEXICANO"<<std::endl;
+         std::cout<<"What action do you want to do"<<std::endl;
          std::cout<<"1) Pending Orders"<<std::endl;
          std::cout<<"2) Estimated Preparation Time"<<std::endl;
          std::cout<<"3) Add a dish"<<std::endl;

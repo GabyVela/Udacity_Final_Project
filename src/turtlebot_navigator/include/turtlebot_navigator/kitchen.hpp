@@ -111,12 +111,12 @@ public:
 class DemoRobot : public rclcpp::Node {
 public:
    DemoRobot(WaiterAgent& waiter) : Node("demo_robot"), _waiter(waiter) {
-      std::cout << "A robot!" << std::endl;
+      //std::cout << "A robot!" << std::endl;
 
       _publisher = create_publisher<Twist>("cmd_vel", 10);
       _timer = create_wall_timer(1000ms, std::bind(&DemoRobot::timer_function, this));
 
-      name = "robert";
+      name = "Waiter";
 
       
    }
@@ -165,8 +165,10 @@ class Menu {
         std::string package_share_directory = ament_index_cpp::get_package_share_directory("turtlebot_navigator");
         std::cout<<package_share_directory<<std::endl;
 
-        std::ifstream file(package_share_directory+"/Menu/Mexicano.txt");
+        std::ifstream file(package_share_directory+"/Menu/"+inputname + ".txt");
+        std::cout<<(package_share_directory+"/Menu/"+inputname + ".txt")<<std::endl;
         if (file.is_open()){
+
         
 
             while (std::getline(file,line)){
