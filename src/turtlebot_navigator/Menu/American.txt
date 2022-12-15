@@ -1,6 +1,6 @@
 15,Burger
 20,Pizza
-22,French Fries
+22,Fries
 25,Nuggets
 18,Salad
 19,Pretzel
