@@ -37,28 +37,35 @@ Uncheck Native opengl
 Check Disable Access Control
  And click Finish
 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-RUN THE PROGRAM
-If you are on Windows
-```bash
-export LIBGL_ALWAYS_INDIRECT=0 #(Only if you are inside of the container) -> Visualize Gazebo and RVIZ
-export DISPLAY=host.docker.internal:0.0 # (Only if you are inside of the container) -> Visualize Gazebo and RVIZ
-```
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-```bash
+ ------------------------------------------------
+ # ADD TO ADD ROS REPO AND BE ABLE TO INSTALL ROS2
+sudo apt update && sudo apt install curl
+sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+sudo apt update
+sudo apt upgrade
+sudo apt install ros-foxy-desktop python3-argcomplete
+# MODIFY FOR CORRECT VERSION OF EXTENSIONS
+sudo apt install python3-colcon-common-extensions
+sudo apt install ros-foxy-turtlebot3
+# ADD TO INSTALL GAZEBO SIM
+sudo apt install ros-foxy-turtlebot3-gazebo
 source /opt/ros/foxy/setup.bash
 export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:`ros2 pkg prefix turtlebot3_gazebo `/share/turtlebot3_gazebo/models/
 export TURTLEBOT3_MODEL=burger
-source install/setup.bash #Install local package
-ros2 launch turtlebot3_gazebo empty_world.launch.py
-```
-In another terminal inside the project directory run the project with
-```bash
-source /opt/ros/foxy/setup.bash
+# IF WINDOWS && NOT USING DOCKER
+export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0 
+# IF WINDOWS && USING DOCKER
+export DISPLAY=host.docker.internal:0.0 
+# ADD TO COMPILE AND MAKE FOLDER INSTALL TO LATER SOURCE
 colcon build
 source install/setup.bash #Install local package
-ros2 run tutlebot_navigator kitchen
-```
+ros2 launch turtlebot3_gazebo empty_world.launch.py
+# UPDATE TO HAVE CORRECT PKG NAME
+ros2 run turtlebot_navigator kitchen
+----------------------------------------------------------
+
+
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 HOW DOES THE PROJECT WORKS
 
