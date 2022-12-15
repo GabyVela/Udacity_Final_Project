@@ -48,10 +48,9 @@ Check Disable Access Control
 RUN THE PROGRAM
 If you are on Windows
 ```bash
-export LIBGL_ALWAYS_INDIRECT=0 #(Only if you are inside of the container) -> Visualize Gazebo and RVIZ
-export DISPLAY=host.docker.internal:0.0 # (Only if you are inside of the container) -> Visualize Gazebo and RVIZ
-If you are not using docker use this command
-export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0 
+export LIBGL_ALWAYS_INDIRECT=0 # to Visualize Gazebo and RVIZ 
+export DISPLAY=host.docker.internal:0.0 # If you are using Docker to Visualize Gazebo and RVIZ
+export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0 # If you are not using docker use this
 ```
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```bash
