@@ -13,14 +13,21 @@ cp -r ../Menu .
 ./RestaurantProject
 ```
 Write the name of the Menu: Mexican
+
 Select the number of the action for adding a dish to your order: 3
+
 Write the name of the dish: Mole
+
 Do you want to wait until dish is delivered: N
+
 Add another dish to your order: 3
+
 Write the name of the dish: Pozole
+
 Do you want to wait until dish is delivered: Y
 
 The program will show a message that the food is being prepared after that a message that the food is ready will appear.
+
 It should take about 15 to 18 seconds to be ready. 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 HOW DOES THE PROJECT WORKS
