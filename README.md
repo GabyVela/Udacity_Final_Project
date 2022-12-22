@@ -2,75 +2,26 @@
 
 HOW TO RUN THE PROJECT
 
-PRE REQUIERMENTS:
-Ubuntu 20.04.5 LTS
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-INSTALL:
-- install galactic in linux terminal
-- install vcxsrv
-- ros2
-- install gazebo
-- install turtle bot3
-
-DEPENDENCIES
-- ROS2(foxy)
-//CONTENEDOR DOCKER
-
-RUN THE FOLLOWING LINES IN THE TERMINAL
+Open the project directory and navigate to RestaurantProject
 ```bash
-sudo apt update && sudo apt install curl
-sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
-sudo apt update
-sudo apt upgrade
-
-sudo apt install ros-foxy-desktop python3-argcomplete
-sudo apt install python3-colcon-common-extensions
-sudo apt install ros-foxy-turtlebot3
-sudo apt install ros-foxy-turtlebot3-gazebo
+cmake -S . -B build
+cd build
+make
+cp -r ../Menu .
+./RestaurantProject
 ```
-If you are on windows
-Install  vcxsrv from: https://sourceforge.net/projects/vcxsrv/
+Write the name of the Menu: Mexican
+Select the number of the action for adding a dish to your order: 3
+Write the name of the dish: Mole
+Do you want to wait until dish is delivered: N
+Add another dish to your order: 3
+Write the name of the dish: Pozole
+Do you want to wait until dish is delivered: Y
 
-Open XLAUNCH  if on windows and activate the following
-First window
-Display Number: 0
-Second Window:
-Leave the default
-Third Window:
-Check Clipboard
-Uncheck Native opengl
-Check Disable Access Control
- And click Finish
-
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-RUN THE PROGRAM
-If you are on Windows
-```bash
-export LIBGL_ALWAYS_INDIRECT=0 # to Visualize Gazebo and RVIZ 
-export DISPLAY=host.docker.internal:0.0 # If you are using Docker to Visualize Gazebo and RVIZ
-export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0 # If you are not using docker use this
-```
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-```bash
-source /opt/ros/foxy/setup.bash
-export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:`ros2 pkg prefix turtlebot3_gazebo `/share/turtlebot3_gazebo/models/
-export TURTLEBOT3_MODEL=burger
-colcon build
-source install/setup.bash #Install local package
-ros2 launch turtlebot3_gazebo empty_world.launch.py
-```
-In another terminal inside the project directory run the project with
-```bash
-source /opt/ros/foxy/setup.bash
-colcon build
-source install/setup.bash #Install local package
-ros2 run turtlebot_navigator kitchen
-```
-
-
-
+The program will show a message that the food is being prepared after that a message that the food is ready will appear.
+It should take about 15 to 18 seconds to be ready. 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 HOW DOES THE PROJECT WORKS
 
@@ -97,7 +48,7 @@ POINTS THAT ARE ADRESSED IN THIS PROJECT
 
 2. Object Oriented Programming
 2.1 The project uses Object Oriented Programming techniques.
-    Yes. There are Classes like ChefAgent, DishOrder, DemoRobot, etc. They represent the main actors/concepts of the system.
+    Yes. There are Classes like ChefAgent, DishOrder, etc. They represent the main actors/concepts of the system.
 
 2.2 Classes use appropriate access specifiers for class members.
     All the classes in this project are in the Kitchen.hpp file. Each of them has functions that are Private, Public or Protected depending of their purpose in the project.
@@ -112,7 +63,7 @@ POINTS THAT ARE ADRESSED IN THIS PROJECT
     The classes in Kitchen.hpp have private andd protected functions that hide the behavior.
 
 2.6 Classes follow an appropriate inheritance hierarchy.
-    There is a hierarchy between ChefAgent, WaiterAgent with JobAgent, DemoRobot and ROS Node.
+    There is a hierarchy between ChefAgent, WaiterAgent with JobAgent.
 
 2.7 Overloaded functions allow the same function to operate on different parameters.
     JobQueue constructor can set a maximum specified size or a default size if the parameter is not passed.
@@ -146,7 +97,6 @@ POINTS THAT ARE ADRESSED IN THIS PROJECT
 4.1 The project uses multithreading.
     The Threads we use in this project are in Kitchen.hpp 
     You can find them in ChefAgent(2) and WaiterAgent.
-    There's another for the robot in Kitchen.cpp
 
 4.2 A promise and future is used in the project.
     The promise and future in this project is in file Kitchen.hpp Line:40 and 41

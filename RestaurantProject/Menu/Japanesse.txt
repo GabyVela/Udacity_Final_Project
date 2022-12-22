@@ -1,0 +1,5 @@
+15,Gohan 
+30,Sushi
+22,Miso-Soup
+25,Tepanyaki
+18,Temaki
